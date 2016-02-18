@@ -58,19 +58,19 @@ readonly MAX_BUS="$3"
 
 ### MAIN
 
-# Log file
-readonly LOG_FILE="$(echo "/home/$(whoami)/rlog")"
-
 # Backup id
 readonly BUID="$(date +%Y-%m-%d_%H:%M:%S)"
+
+# Log file
+readonly LOG_FILE="${BUID}.log"
+
+# Destination folder for backup
+readonly BU="${BUS_FOLDER}/${BUID}"
 
 # *** Ensure folder existence if local
 if [[ ! "${BUS_FOLDER}" = *:* ]]; then
   mkdir -p "${BUS_FOLDER}"
 fi
-
-# Destination folder for backup
-readonly bu="${BUS_FOLDER}/${BUID}"
 
 # *** Create new backup
 link=""
@@ -78,7 +78,8 @@ bu_count="$(lsdircount "${BUS_FOLDER}")"
 if [[ "${bu_count}" -gt 0 ]]; then  # hardlinked to last backup
   link=" --link-dest=$(lastdir "${BUS_FOLDER}")"
 fi
-rsync -azhe ssh --delete${link} --log-file="${LOG_FILE}" "${SRC_FOLDER}" "${bu}"
+rm -f "${LOG_FILE}"
+rsync -azhe ssh --delete${link} --log-file="${LOG_FILE}" "${SRC_FOLDER}" "${BU}"
 
 # *** Remove old backups
 bu_count="$(lsdircount "${BUS_FOLDER}")"
