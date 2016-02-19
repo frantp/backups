@@ -26,16 +26,6 @@ lsdircount() {
   fi
 }
 
-# Returns the last directory in a given directory, alphabetically
-lastdir() {
-  echo "$(lsdir "$1")" | tail -n 1
-}
-
-# Remove the first n directories in a given directory, alphabetically
-rmfirstdirs() {
-  echo "$(lsdir "$1")" | head -n "$2" | xargs rm -r
-}
-
 
 ### Command line arguments
 
@@ -61,11 +51,11 @@ readonly MAX_BUS="$3"
 # Backup id
 readonly BUID="$(date +%Y-%m-%d_%H:%M:%S)"
 
-# Log file
-readonly LOG_FILE="${BUID}.log"
-
 # Destination folder for backup
 readonly BU="${BUS_FOLDER}/${BUID}"
+
+# Log file
+readonly LOG_FILE="${BU}.log"
 
 # *** Ensure folder existence if local
 if [[ ! "${BUS_FOLDER}" = *:* ]]; then
@@ -76,7 +66,7 @@ fi
 link=""
 bu_count="$(lsdircount "${BUS_FOLDER}")"
 if [[ "${bu_count}" -gt 0 ]]; then  # hardlinked to last backup
-  link=" --link-dest=$(lastdir "${BUS_FOLDER}")"
+  link=" --link-dest=$(echo "$(lsdir "${BUS_FOLDER}")" | tail -n 1)"
 fi
 rm -f "${LOG_FILE}"
 rsync -azhe ssh --delete${link} --log-file="${LOG_FILE}" "${SRC_FOLDER}" "${BU}"
@@ -84,5 +74,7 @@ rsync -azhe ssh --delete${link} --log-file="${LOG_FILE}" "${SRC_FOLDER}" "${BU}"
 # *** Remove old backups
 bu_count="$(lsdircount "${BUS_FOLDER}")"
 if [ "${bu_count}" -gt "${MAX_BUS}" ]; then
-  rmfirstdirs "${BUS_FOLDER}" "$((${bu_count} - ${MAX_BUS}))"
+  n="$((${bu_count} - ${MAX_BUS}))"
+  bus="$(echo "$(lsdir "${BUS_FOLDER}")" | head -n "${n}")"
+  echo "${bus}" | xargs -I {} sh -c 'rm -r "{}" && rm "{}.log"'
 fi

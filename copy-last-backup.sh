@@ -22,16 +22,6 @@ lsdircount() {
   fi
 }
 
-# Returns the last directory in a given directory, alphabetically
-lastdir() {
-  echo "$(lsdir "$1")" | tail -n 1
-}
-
-# Remove the first n directories in a given directory, alphabetically
-rmfirstdirs() {
-  echo "$(lsdir "$1")" | head -n "$2" | xargs rm -r
-}
-
 
 ### Command line arguments
 
@@ -53,12 +43,14 @@ readonly MAX_BUS="$3"
 ### MAIN
 
 # *** Copy backup to destination folder
-src_bu="$(lastdir "${SRC_FOLDER}")"
+src_bu="$(echo "$(lsdir "${SRC_FOLDER}")" | tail -n 1)"
 mkdir -p "${DST_FOLDER}"
 cp -al --remove-destination "${src_bu}" "${DST_FOLDER}"
 
 # *** Remove old backups in destination folder
 bu_count="$(lsdircount "${DST_FOLDER}")"
 if [ "${bu_count}" -gt "${MAX_BUS}" ]; then
-  rmfirstdirs "${DST_FOLDER}" "$((${bu_count} - ${MAX_BUS}))"
+  n="$((${bu_count} - ${MAX_BUS}))"
+  bus="$(echo "$(lsdir "${BUS_FOLDER}")" | head -n "${n}")"
+  echo "${bus}" | xargs rm -r
 fi
